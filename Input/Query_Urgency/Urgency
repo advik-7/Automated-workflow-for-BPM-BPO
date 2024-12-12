@@ -1,0 +1,58 @@
+import os
+import pandas as pd
+import google.generativeai as genai
+
+
+API_KEY = os.environ["GEMINI_API_KEY"]
+
+transcription_file_path = "/kaggle/input/ggggggg5/transcription.txt"
+with open(transcription_file_path, "r") as file:
+    transcription = file.read()
+
+genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+generation_config = {
+    "temperature": 1,
+    "top_p": 0.95,
+    "top_k": 40,
+    "max_output_tokens": 8192,
+    "response_mime_type": "text/plain",
+}
+
+model = genai.GenerativeModel(
+    model_name="gemini-1.5-flash",
+    generation_config=generation_config,
+)
+
+csv_path = "/kaggle/input/urgency/urgency_metrics.csv"
+urgency_data = pd.read_csv(csv_path)
+
+urgency_classes = []
+for index, row in urgency_data.iterrows():
+    urgency_classes.append(
+        f"{row['Urgency Score']}: {row['Time Constraints']}, {row['Situation Description']}, {row['Situation Characteristics']}"
+    )
+urgency_descriptions = "\n".join(urgency_classes)
+
+with open(transcription_file_path, "r") as file:
+    transcription = file.read()
+
+chat_session = model.start_chat(
+    history=[]
+)
+
+prompt = (
+    f"You are an AI assistant trained to analyze customer interactions and classify queries based on urgency. "
+    f"The urgency is categorized into 10 classes. Here are the class definitions:\n\n"
+    f"{urgency_descriptions}\n\n"
+    f"Your task is to analyze the following conversation, identify the customer's core query or concern, and classify it into one of these 10 urgency classes. "
+    f"Output only the class number corresponding to the urgency level.\n\n"
+    f"Conversation:\n{transcription}\n\n"
+    f"Output:"
+)
+
+response = chat_session.send_message(prompt)
+
+print("Classified Urgency Level:", response.text.strip())
+
+
+

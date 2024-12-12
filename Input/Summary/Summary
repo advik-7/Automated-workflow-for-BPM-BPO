@@ -1,0 +1,53 @@
+import os
+import google.generativeai as genai   # !pip install  genai- run in terminal
+
+
+API_KEY = os.environ["GEMINI_API_KEY"]
+
+transcription_file_path = "/kaggle/input/ggggggg5/transcription.txt"
+with open(transcription_file_path, "r") as file:
+    transcription = file.read()
+
+
+
+# Configure the Gemini API
+genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+
+# Set generation configuration
+generation_config = {
+    "temperature": 1,
+    "top_p": 0.95,
+    "top_k": 40,
+    "max_output_tokens": 8192,
+    "response_mime_type": "text/plain",
+}
+
+# Initialize the model
+model = genai.GenerativeModel(
+    model_name="gemini-1.5-flash",
+    generation_config=generation_config,
+)
+
+with open(transcription_file_path, "r") as file:
+    transcription = file.read()
+
+# Define the chat session
+chat_session = model.start_chat(
+    history=[]
+)
+
+prompt = (
+    f"You are a highly skilled AI assistant specializing in analyzing and summarizing call-center dialogues. Your role is to precisely identify and summarize the customer's primary query or concern. "
+    f"The conversation transcript between the customer and the agent is provided below in dialogue format (e.g., Customer: ..., Agent: ...). Carefully analyze the conversation, focusing on key details, and generate a clear, concise summary of the customer's main issue or request. "
+    f"Avoid generalizations and ensure the summary captures the specific query or concern expressed by the customer.\n\n"
+    f"Conversation:\n{transcription}\n\n"
+    f"Output Format:\n"
+    f"The customer is inquiring about [specific query or concern].\n\n"
+    f"Output:"
+)
+
+# Send the message to the model
+response = chat_session.send_message(prompt)
+
+# Print the response
+print("Model Output:", response.text)
